@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/neonxp/rpc"
+	"github.com/neonxp/jsonrpc2"
 )
 
 func main() {
