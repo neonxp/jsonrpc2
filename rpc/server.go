@@ -1,42 +1,23 @@
-package jsonrpc2
+package rpc
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"io"
-	"net/http"
 	"sync"
 )
 
 const version = "2.0"
 
-type Server struct {
+type RpcServer struct {
 	Logger              Logger
 	IgnoreNotifications bool
 	handlers            map[string]Handler
 	mu                  sync.RWMutex
 }
 
-func (r *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	writer.Header().Set("Content-Type", "application/json")
-	buf := bufio.NewReader(request.Body)
-	defer request.Body.Close()
-	firstByte, err := buf.Peek(1)
-	if err != nil {
-		r.Logger.Logf("Can't read body: %v", err)
-		writeError(ErrCodeParseError, writer)
-		return
-	}
-	if string(firstByte) == "[" {
-		r.batchRequest(writer, request, buf)
-		return
-	}
-	r.singleRequest(writer, request, buf)
-}
-
-func New() *Server {
-	return &Server{
+func New() *RpcServer {
+	return &RpcServer{
 		Logger:              nopLogger{},
 		IgnoreNotifications: true,
 		handlers:            map[string]Handler{},
@@ -44,36 +25,36 @@ func New() *Server {
 	}
 }
 
-func (r *Server) Register(method string, handler Handler) {
+func (r *RpcServer) Register(method string, handler Handler) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.handlers[method] = handler
 }
 
-func (r *Server) singleRequest(writer http.ResponseWriter, request *http.Request, buf *bufio.Reader) {
+func (r *RpcServer) SingleRequest(ctx context.Context, reader io.Reader, writer io.Writer) {
 	req := new(rpcRequest)
-	if err := json.NewDecoder(buf).Decode(req); err != nil {
+	if err := json.NewDecoder(reader).Decode(req); err != nil {
 		r.Logger.Logf("Can't read body: %v", err)
-		writeError(ErrCodeParseError, writer)
+		WriteError(ErrCodeParseError, writer)
 		return
 	}
-	resp := r.callMethod(request.Context(), req)
+	resp := r.callMethod(ctx, req)
 	if req.Id == nil && r.IgnoreNotifications {
 		// notification request
 		return
 	}
 	if err := json.NewEncoder(writer).Encode(resp); err != nil {
 		r.Logger.Logf("Can't write response: %v", err)
-		writeError(ErrCodeInternalError, writer)
+		WriteError(ErrCodeInternalError, writer)
 		return
 	}
 }
 
-func (r *Server) batchRequest(writer http.ResponseWriter, request *http.Request, buf *bufio.Reader) {
+func (r *RpcServer) BatchRequest(ctx context.Context, reader io.Reader, writer io.Writer) {
 	var req []rpcRequest
-	if err := json.NewDecoder(buf).Decode(&req); err != nil {
+	if err := json.NewDecoder(reader).Decode(&req); err != nil {
 		r.Logger.Logf("Can't read body: %v", err)
-		writeError(ErrCodeParseError, writer)
+		WriteError(ErrCodeParseError, writer)
 		return
 	}
 	var responses []*rpcResponse
@@ -82,7 +63,7 @@ func (r *Server) batchRequest(writer http.ResponseWriter, request *http.Request,
 	for _, j := range req {
 		go func(req rpcRequest) {
 			defer wg.Done()
-			resp := r.callMethod(request.Context(), &req)
+			resp := r.callMethod(ctx, &req)
 			if req.Id == nil && r.IgnoreNotifications {
 				// notification request
 				return
@@ -93,11 +74,11 @@ func (r *Server) batchRequest(writer http.ResponseWriter, request *http.Request,
 	wg.Wait()
 	if err := json.NewEncoder(writer).Encode(responses); err != nil {
 		r.Logger.Logf("Can't write response: %v", err)
-		writeError(ErrCodeInternalError, writer)
+		WriteError(ErrCodeInternalError, writer)
 	}
 }
 
-func (r *Server) callMethod(ctx context.Context, req *rpcRequest) *rpcResponse {
+func (r *RpcServer) callMethod(ctx context.Context, req *rpcRequest) *rpcResponse {
 	r.mu.RLock()
 	h, ok := r.handlers[req.Method]
 	r.mu.RUnlock()
@@ -124,7 +105,7 @@ func (r *Server) callMethod(ctx context.Context, req *rpcRequest) *rpcResponse {
 	}
 }
 
-func writeError(code int, w io.Writer) {
+func WriteError(code int, w io.Writer) {
 	_ = json.NewEncoder(w).Encode(rpcResponse{
 		Jsonrpc: version,
 		Error:   NewError(code),

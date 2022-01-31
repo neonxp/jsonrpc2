@@ -1,4 +1,4 @@
-package jsonrpc2
+package rpc
 
 import "fmt"
 
@@ -20,7 +20,7 @@ var errorMap = map[int]string{
 	-32000: "Other error",
 }
 
-//-32000 to -32099 	Server error 	Reserved for implementation-defined server-errors.
+//-32000 to -32099 	RpcServer error 	Reserved for implementation-defined server-errors.
 
 type Error struct {
 	Code    int    `json:"code"`

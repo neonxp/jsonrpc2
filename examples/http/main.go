@@ -5,13 +5,15 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/neonxp/jsonrpc2"
+	httpRPC "github.com/neonxp/jsonrpc2/http"
+	"github.com/neonxp/jsonrpc2/rpc"
 )
 
 func main() {
-	s := jsonrpc2.New()
-	s.Register("multiply", jsonrpc2.Wrap(Multiply))
-	s.Register("divide", jsonrpc2.Wrap(Divide))
+	s := httpRPC.New()
+
+	s.Register("multiply", rpc.Wrap(Multiply))
+	s.Register("divide", rpc.Wrap(Divide))
 
 	http.ListenAndServe(":8000", s)
 }
