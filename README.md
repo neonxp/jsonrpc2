@@ -13,7 +13,7 @@ Go 1.18+ required
 
 1. Create JSON-RPC/HTTP server:
     ```go
-    import "github.com/neonxp/jsonrpc2/http"
+    import "go.neonxp.dev/jsonrpc2/http"
     ...
     s := http.New()
     ```
@@ -48,8 +48,8 @@ import (
    "context"
    "net/http"
 
-   httpRPC "github.com/neonxp/jsonrpc2/http"
-   "github.com/neonxp/jsonrpc2/rpc"
+   httpRPC "go.neonxp.dev/jsonrpc2/http"
+   "go.neonxp.dev/jsonrpc2/rpc"
 )
 
 func main() {

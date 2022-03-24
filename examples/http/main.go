@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	httpRPC "github.com/neonxp/jsonrpc2/http"
-	"github.com/neonxp/jsonrpc2/rpc"
+	httpRPC "go.neonxp.dev/jsonrpc2/http"
+	"go.neonxp.dev/jsonrpc2/rpc"
 )
 
 func main() {

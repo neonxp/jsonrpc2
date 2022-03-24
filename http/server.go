@@ -2,7 +2,7 @@
 //
 //Copyright (C) 2022 Alexander Kiryukhin <i@neonxp.dev>
 //
-//This file is part of github.com/neonxp/jsonrpc2 project.
+//This file is part of go.neonxp.dev/jsonrpc2 project.
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import (
 	"bufio"
 	"net/http"
 
-	"github.com/neonxp/jsonrpc2/rpc"
+	"go.neonxp.dev/jsonrpc2/rpc"
 )
 
 type Server struct {
