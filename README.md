@@ -36,12 +36,13 @@ Go 1.18+ required
 ```
 
    Handler must have exact two arguments (context and input of any json serializable type) and exact two return values (output of any json serializable type and error)
-3. Wrap handler with `rpc.Wrap` method and register it in server:
+
+4. Wrap handler with `rpc.H` method and register it in server:
 ```go
     s.Register("multiply", rpc.H(Multiply))
 ```
 
-4. Run RPC server:
+5. Run RPC server:
 ```go
     s.Run(ctx)
 ```
