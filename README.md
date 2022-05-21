@@ -1,3 +1,4 @@
+
 # JSON-RPC 2.0
 
 Golang implementation of JSON-RPC 2.0 server with generics.
@@ -6,58 +7,79 @@ Go 1.18+ required
 
 ## Features:
 
-- [x] Batch request and responses
+- [x] HTTP/HTTPS transport
+- [x] TCP transport
 - [ ] WebSocket transport
 
 ## Usage (http transport)
 
-1. Create JSON-RPC/HTTP server:
-    ```go
-    import "go.neonxp.dev/jsonrpc2/http"
+1. Create JSON-RPC server:
+```go
+    import "go.neonxp.dev/jsonrpc2/rpc"
     ...
-    s := http.New()
-    ```
-2. Write handler:
-    ```go
+    s := rpc.New()
+```
+
+2. Add required transport(s):
+```go
+    import "go.neonxp.dev/jsonrpc2/transport"
+    ...
+    s.AddTransport(&transport.HTTP{Bind: ":8000"})
+    s.AddTransport(&transport.TCP{Bind: ":3000"})
+```
+
+3. Write handler:
+```go
     func Multiply(ctx context.Context, args *Args) (int, error) {
         return args.A * args.B, nil
     }
-    ```
+```
+
    Handler must have exact two arguments (context and input of any json serializable type) and exact two return values (output of any json serializable type and error)
 3. Wrap handler with `rpc.Wrap` method and register it in server:
-    ```go
-    s.Register("multiply", rpc.Wrap(Multiply))
-    ```
-4. Use server as common http handler:
-    ```go
-    http.ListenAndServe(":8000", s)
-    ```
+```go
+    s.Register("multiply", rpc.H(Multiply))
+```
+
+4. Run RPC server:
+```go
+    s.Run(ctx)
+```
 
 ## Custom transport
 
-See [http/server.go](/http/server.go) for example of transport implementation.
+Any transport must implement simple interface `transport.Transport`:
+
+```go
+type Transport interface {
+	Run(ctx context.Context, resolver Resolver) error
+}
+```
 
 ## Complete example
 
-[Full code](/examples/http)
+[Full code](/example)
 
 ```go
 package main
 
 import (
    "context"
-   "net/http"
 
-   httpRPC "go.neonxp.dev/jsonrpc2/http"
    "go.neonxp.dev/jsonrpc2/rpc"
+   "go.neonxp.dev/jsonrpc2/transport"
 )
 
 func main() {
-   s := httpRPC.New()
-   s.Register("multiply", rpc.Wrap(Multiply))
-   s.Register("divide", rpc.Wrap(Divide))
+   s := rpc.New()
 
-   http.ListenAndServe(":8000", s)
+   s.AddTransport(&transport.HTTP{Bind: ":8000"}) // HTTP transport
+   s.AddTransport(&transport.TCP{Bind: ":3000"}) // TCP transport
+
+   s.Register("multiply", rpc.H(Multiply))
+   s.Register("divide", rpc.H(Divide))
+
+   s.Run(context.Background())
 }
 
 func Multiply(ctx context.Context, args *Args) (int, error) {
@@ -87,3 +109,5 @@ Alexander Kiryukhin <i@neonxp.dev>
 ## License
 
 ![GPL v3](https://www.gnu.org/graphics/gplv3-with-text-136x68.png)
+
+

@@ -24,7 +24,7 @@ import (
 	"encoding/json"
 )
 
-func Wrap[RQ any, RS any](handler func(context.Context, *RQ) (RS, error)) Handler {
+func H[RQ any, RS any](handler func(context.Context, *RQ) (RS, error)) Handler {
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		req := new(RQ)
 		if err := json.Unmarshal(in, req); err != nil {

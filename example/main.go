@@ -3,19 +3,29 @@ package main
 import (
 	"context"
 	"errors"
-	"net/http"
+	"log"
+	"os"
+	"os/signal"
 
-	httpRPC "go.neonxp.dev/jsonrpc2/http"
 	"go.neonxp.dev/jsonrpc2/rpc"
+	"go.neonxp.dev/jsonrpc2/transport"
 )
 
 func main() {
-	s := httpRPC.New()
+	s := rpc.New()
 
-	s.Register("multiply", rpc.Wrap(Multiply))
-	s.Register("divide", rpc.Wrap(Divide))
+	s.AddTransport(&transport.HTTP{Bind: ":8000"})
+	s.AddTransport(&transport.TCP{Bind: ":3000"})
 
-	http.ListenAndServe(":8000", s)
+	s.Register("multiply", rpc.H(Multiply))
+	s.Register("divide", rpc.H(Divide))
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
+	if err := s.Run(ctx); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func Multiply(ctx context.Context, args *Args) (int, error) {
