@@ -20,8 +20,8 @@ func (h *HTTP) Run(ctx context.Context, resolver Resolver) error {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
+			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Header().Set("Content-Type", "application/json")
 			resolver.Resolve(ctx, r.Body, w)
 		}),
 		BaseContext: func(l net.Listener) context.Context {
