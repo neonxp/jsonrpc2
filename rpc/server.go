@@ -114,7 +114,7 @@ func (r *RpcServer) callMethod(ctx context.Context, req *rpcRequest) *rpcRespons
 	if !ok {
 		return &rpcResponse{
 			Jsonrpc: version,
-			Error:   NewError(ErrCodeMethodNotFound),
+			Error:   ErrorFromCode(ErrCodeMethodNotFound),
 			Id:      req.Id,
 		}
 	}
@@ -137,7 +137,7 @@ func (r *RpcServer) callMethod(ctx context.Context, req *rpcRequest) *rpcRespons
 func WriteError(code int, enc *json.Encoder) {
 	enc.Encode(rpcResponse{
 		Jsonrpc: version,
-		Error:   NewError(code),
+		Error:   ErrorFromCode(code),
 	})
 }
 

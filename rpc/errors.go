@@ -50,7 +50,7 @@ func (e Error) Error() string {
 	return fmt.Sprintf("jsonrpc2 error: code: %d message: %s", e.Code, e.Message)
 }
 
-func NewError(code int) Error {
+func ErrorFromCode(code int) Error {
 	if _, ok := errorMap[code]; ok {
 		return Error{
 			Code:    code,
@@ -58,4 +58,14 @@ func NewError(code int) Error {
 		}
 	}
 	return Error{Code: code}
+}
+
+func NewError(message string, code int) Error {
+	if code == 0 {
+		code = ErrUser
+	}
+	return Error{
+		Code:    code,
+		Message: message,
+	}
 }
