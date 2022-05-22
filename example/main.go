@@ -12,10 +12,15 @@ import (
 )
 
 func main() {
-	s := rpc.New()
-
-	s.AddTransport(&transport.HTTP{Bind: ":8000"})
-	s.AddTransport(&transport.TCP{Bind: ":3000"})
+	s := rpc.New(
+		rpc.WithLogger(rpc.StdLogger),
+		rpc.WithTransport(&transport.HTTP{Bind: ":8000", CORSOrigin: "*"}),
+	)
+	// Set options after constructor
+	s.Use(
+		rpc.WithTransport(&transport.TCP{Bind: ":3000"}),
+		rpc.WithMiddleware(rpc.LoggerMiddleware(rpc.StdLogger)),
+	)
 
 	s.Register("multiply", rpc.H(Multiply))
 	s.Register("divide", rpc.H(Divide))

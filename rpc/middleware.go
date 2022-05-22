@@ -1,4 +1,4 @@
-//Package transport provides transports for rpc server
+//Package rpc provides abstract rpc server
 //
 //Copyright (C) 2022 Alexander Kiryukhin <i@neonxp.dev>
 //
@@ -17,33 +17,27 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package transport
+package rpc
 
 import (
 	"context"
-	"net"
+	"strings"
+	"time"
 )
 
-type TCP struct {
-	Bind     string
-	Parallel bool
-}
+type Middleware func(handler RpcHandler) RpcHandler
 
-func (t *TCP) Run(ctx context.Context, resolver Resolver) error {
-	ln, err := net.Listen("tcp", t.Bind)
-	if err != nil {
-		return err
-	}
+type RpcHandler func(ctx context.Context, req *RpcRequest) *RpcResponse
 
-	go func() {
-		<-ctx.Done()
-		ln.Close()
-	}()
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			return err
+func LoggerMiddleware(logger Logger) Middleware {
+	return func(handler RpcHandler) RpcHandler {
+		return func(ctx context.Context, req *RpcRequest) *RpcResponse {
+			t1 := time.Now().UnixMicro()
+			resp := handler(ctx, req)
+			t2 := time.Now().UnixMicro()
+			args := strings.ReplaceAll(string(req.Params), "\n", "")
+			logger.Logf("rpc call=%s, args=%s, take=%dμs", req.Method, args, (t2 - t1))
+			return resp
 		}
-		go resolver.Resolve(ctx, conn, conn, t.Parallel)
 	}
 }

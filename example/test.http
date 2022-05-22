@@ -11,18 +11,6 @@ Content-Type: application/json
 }
 
 
-date: Sat, 21 May 2022 16:53:31 GMT
-content-length: 36
-content-type: text/plain; charset=utf-8
-connection: close
-
-HTTP/1.1 200  - OK
-date: Sat, 21 May 2022 16:53:31 GMT
-content-length: 36
-content-type: text/plain; charset=utf-8
-connection: close
-
-
 ###
 POST http://localhost:8000/
 Content-Type: application/json
@@ -35,18 +23,6 @@ Content-Type: application/json
   },
   "id": 2
 }
-
-
-date: Sat, 21 May 2022 16:53:51 GMT
-content-length: 52
-content-type: text/plain; charset=utf-8
-connection: close
-
-HTTP/1.1 200  - OK
-date: Sat, 21 May 2022 16:53:51 GMT
-content-length: 52
-content-type: text/plain; charset=utf-8
-connection: close
 
 
 ### Batch request
@@ -68,15 +44,3 @@ Content-Type: application/json
   {"foo": "boo"}
   {"jsonrpc": "2.0", "method": "foo.get", "params": {"name": "myself"}, "id": "5"}
   {"jsonrpc": "2.0", "method": "get_data", "id": "9"}
-
-
-date: Sat, 21 May 2022 17:18:17 GMT
-content-type: text/plain; charset=utf-8
-connection: close
-transfer-encoding: chunked
-
-HTTP/1.1 200  - OK
-date: Sat, 21 May 2022 17:18:17 GMT
-content-type: text/plain; charset=utf-8
-connection: close
-transfer-encoding: chunked

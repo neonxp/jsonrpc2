@@ -13,19 +13,29 @@ Go 1.18+ required
 
 ## Usage (http transport)
 
-1. Create JSON-RPC server:
+1. Create JSON-RPC server with options:
 ```go
     import "go.neonxp.dev/jsonrpc2/rpc"
     ...
-    s := rpc.New()
+    s := rpc.New(
+        rpc.WithTransport(&transport.HTTP{
+            Bind: ":8000",      // Port to bind
+            CORSOrigin: "*",    // CORS origin
+            TLS: &tls.Config{}, // Optional TLS config (default nil)
+            Parallel: true,     // Allow parallel run batch methods (default false)
+        }),
+        //Other options like transports/middlewares...
+    )
 ```
 
 2. Add required transport(s):
 ```go
     import "go.neonxp.dev/jsonrpc2/transport"
     ...
-    s.AddTransport(&transport.HTTP{Bind: ":8000"})
-    s.AddTransport(&transport.TCP{Bind: ":3000"})
+    s.Use(
+        rpc.WithTransport(&transport.TCP{Bind: ":3000"}),
+        //...
+    )
 ```
 
 3. Write handler:
@@ -72,10 +82,16 @@ import (
 )
 
 func main() {
-   s := rpc.New()
+    s := rpc.New(
+        rpc.WithLogger(rpc.StdLogger), // Optional logger
+        rpc.WithTransport(&transport.HTTP{Bind: ":8000"}), // HTTP transport
+    )
 
-   s.AddTransport(&transport.HTTP{Bind: ":8000"}) // HTTP transport
-   s.AddTransport(&transport.TCP{Bind: ":3000"}) // TCP transport
+    // Set options after constructor
+    s.Use(
+        rpc.WithTransport(&transport.TCP{Bind: ":3000"}), // TCP transport
+        rpc.WithMiddleware(rpc.LoggerMiddleware(rpc.StdLogger)), // Logger middleware
+    )
 
    s.Register("multiply", rpc.H(Multiply))
    s.Register("divide", rpc.H(Divide))

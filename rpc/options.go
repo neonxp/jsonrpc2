@@ -1,4 +1,4 @@
-//Package transport provides transports for rpc server
+//Package rpc provides abstract rpc server
 //
 //Copyright (C) 2022 Alexander Kiryukhin <i@neonxp.dev>
 //
@@ -17,33 +17,26 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package transport
+package rpc
 
-import (
-	"context"
-	"net"
-)
+import "go.neonxp.dev/jsonrpc2/transport"
 
-type TCP struct {
-	Bind     string
-	Parallel bool
+type Option func(s *RpcServer)
+
+func WithTransport(transport transport.Transport) Option {
+	return func(s *RpcServer) {
+		s.transports = append(s.transports, transport)
+	}
 }
 
-func (t *TCP) Run(ctx context.Context, resolver Resolver) error {
-	ln, err := net.Listen("tcp", t.Bind)
-	if err != nil {
-		return err
+func WithMiddleware(mw Middleware) Option {
+	return func(s *RpcServer) {
+		s.middlewares = append(s.middlewares, mw)
 	}
+}
 
-	go func() {
-		<-ctx.Done()
-		ln.Close()
-	}()
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			return err
-		}
-		go resolver.Resolve(ctx, conn, conn, t.Parallel)
+func WithLogger(l Logger) Option {
+	return func(s *RpcServer) {
+		s.logger = l
 	}
 }
