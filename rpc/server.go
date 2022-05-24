@@ -83,11 +83,6 @@ func (r *RpcServer) Resolve(ctx context.Context, rd io.Reader, w io.Writer, para
 	for {
 		req := new(RpcRequest)
 		if err := dec.Decode(req); err != nil {
-			if err == io.EOF {
-				break
-			}
-			r.logger.Logf("Can't read body: %v", err)
-			WriteError(ErrCodeParseError, enc)
 			break
 		}
 		exec := func() {
