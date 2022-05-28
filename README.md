@@ -78,6 +78,7 @@ import (
    "context"
 
    "go.neonxp.dev/jsonrpc2/rpc"
+   "go.neonxp.dev/jsonrpc2/rpc/middleware"
    "go.neonxp.dev/jsonrpc2/transport"
 )
 
@@ -90,7 +91,7 @@ func main() {
     // Set options after constructor
     s.Use(
         rpc.WithTransport(&transport.TCP{Bind: ":3000"}), // TCP transport
-        rpc.WithMiddleware(rpc.LoggerMiddleware(rpc.StdLogger)), // Logger middleware
+        rpc.WithMiddleware(middleware.Logger(rpc.StdLogger)), // Logger middleware
     )
 
    s.Register("multiply", rpc.H(Multiply))

@@ -19,4 +19,28 @@
 
 package rpc
 
-type Middleware func(handler RpcHandler) RpcHandler
+import (
+	"context"
+	"encoding/json"
+)
+
+type RpcHandler func(ctx context.Context, req *RpcRequest) *RpcResponse
+
+type RpcRequest struct {
+	Jsonrpc string          `json:"jsonrpc"`
+	Method  string          `json:"method"`
+	Params  json.RawMessage `json:"params"`
+	Id      any             `json:"id"`
+}
+
+type RpcResponse struct {
+	Jsonrpc string          `json:"jsonrpc"`
+	Result  json.RawMessage `json:"result,omitempty"`
+	Error   error           `json:"error,omitempty"`
+	Id      any             `json:"id,omitempty"`
+}
+
+type Flusher interface {
+	// Flush sends any buffered data to the client.
+	Flush()
+}

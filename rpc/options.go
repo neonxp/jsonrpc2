@@ -19,7 +19,9 @@
 
 package rpc
 
-import "go.neonxp.dev/jsonrpc2/transport"
+import (
+	"go.neonxp.dev/jsonrpc2/transport"
+)
 
 type Option func(s *RpcServer)
 

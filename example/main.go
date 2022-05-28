@@ -7,7 +7,9 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/qri-io/jsonschema"
 	"go.neonxp.dev/jsonrpc2/rpc"
+	"go.neonxp.dev/jsonrpc2/rpc/middleware"
 	"go.neonxp.dev/jsonrpc2/transport"
 )
 
@@ -17,9 +19,42 @@ func main() {
 		rpc.WithTransport(&transport.HTTP{Bind: ":8000", CORSOrigin: "*"}),
 	)
 	// Set options after constructor
+	validation, err := middleware.Validation(map[string]middleware.MethodSchema{
+		"divide": {
+			Request: *jsonschema.Must(`{
+				"type": "object",
+				"properties": {
+					"a": {
+						"type": "integer"
+					},
+					"b": {
+						"type": "integer",
+						"not":{"const":0}
+					}
+				},
+				"required": ["a", "b"]
+			}`),
+			Response: *jsonschema.Must(`{
+				"type": "object",
+				"properties": {
+					"quo": {
+						"type": "integer"
+					},
+					"rem": {
+						"type": "integer"
+					}
+				},
+				"required": ["quo", "rem"]
+			}`),
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	s.Use(
 		rpc.WithTransport(&transport.TCP{Bind: ":3000"}),
-		rpc.WithMiddleware(rpc.LoggerMiddleware(rpc.StdLogger)),
+		rpc.WithMiddleware(middleware.Logger(rpc.StdLogger)),
+		rpc.WithMiddleware(validation),
 	)
 
 	s.Register("multiply", rpc.H(Multiply))

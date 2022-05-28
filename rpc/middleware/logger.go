@@ -1,4 +1,4 @@
-//Package rpc provides abstract rpc server
+//Package middleware provides middlewares for rpc server
 //
 //Copyright (C) 2022 Alexander Kiryukhin <i@neonxp.dev>
 //
@@ -17,6 +17,25 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package rpc
+package middleware
 
-type Middleware func(handler RpcHandler) RpcHandler
+import (
+	"context"
+	"strings"
+	"time"
+
+	"go.neonxp.dev/jsonrpc2/rpc"
+)
+
+func Logger(logger rpc.Logger) rpc.Middleware {
+	return func(handler rpc.RpcHandler) rpc.RpcHandler {
+		return func(ctx context.Context, req *rpc.RpcRequest) *rpc.RpcResponse {
+			t1 := time.Now().UnixMicro()
+			resp := handler(ctx, req)
+			t2 := time.Now().UnixMicro()
+			args := strings.ReplaceAll(string(req.Params), "\n", "")
+			logger.Logf("rpc call=%s, args=%s, take=%dμs", req.Method, args, (t2 - t1))
+			return resp
+		}
+	}
+}

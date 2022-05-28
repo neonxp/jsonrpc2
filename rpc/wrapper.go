@@ -24,7 +24,7 @@ import (
 	"encoding/json"
 )
 
-func H[RQ any, RS any](handler func(context.Context, *RQ) (RS, error)) Handler {
+func H[RQ any, RS any](handler func(context.Context, *RQ) (RS, error)) HandlerFunc {
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		req := new(RQ)
 		if err := json.Unmarshal(in, req); err != nil {
@@ -41,4 +41,4 @@ func H[RQ any, RS any](handler func(context.Context, *RQ) (RS, error)) Handler {
 	}
 }
 
-type Handler func(context.Context, json.RawMessage) (json.RawMessage, error)
+type HandlerFunc func(context.Context, json.RawMessage) (json.RawMessage, error)

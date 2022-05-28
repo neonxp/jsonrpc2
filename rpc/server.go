@@ -23,6 +23,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"strings"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -34,7 +35,7 @@ const version = "2.0"
 
 type RpcServer struct {
 	logger      Logger
-	handlers    map[string]Handler
+	handlers    map[string]HandlerFunc
 	middlewares []Middleware
 	transports  []transport.Transport
 	mu          sync.RWMutex
@@ -43,7 +44,7 @@ type RpcServer struct {
 func New(opts ...Option) *RpcServer {
 	s := &RpcServer{
 		logger:     nopLogger{},
-		handlers:   map[string]Handler{},
+		handlers:   map[string]HandlerFunc{},
 		transports: []transport.Transport{},
 		mu:         sync.RWMutex{},
 	}
@@ -59,10 +60,11 @@ func (r *RpcServer) Use(opts ...Option) {
 	}
 }
 
-func (r *RpcServer) Register(method string, handler Handler) {
+func (r *RpcServer) Register(method string, handler HandlerFunc) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.handlers[method] = handler
+	r.logger.Logf("Register method %s", method)
+	r.handlers[strings.ToLower(method)] = handler
 }
 
 func (r *RpcServer) Run(ctx context.Context) error {
@@ -99,7 +101,7 @@ func (r *RpcServer) Resolve(ctx context.Context, rd io.Reader, w io.Writer, para
 			defer mu.Unlock()
 			if err := enc.Encode(resp); err != nil {
 				r.logger.Logf("Can't write response: %v", err)
-				WriteError(ErrCodeInternalError, enc)
+				enc.Encode(ErrorResponse(req.Id, ErrorFromCode(ErrCodeInternalError)))
 			}
 			if w, canFlush := w.(Flusher); canFlush {
 				w.Flush()
@@ -122,53 +124,32 @@ func (r *RpcServer) Resolve(ctx context.Context, rd io.Reader, w io.Writer, para
 
 func (r *RpcServer) callMethod(ctx context.Context, req *RpcRequest) *RpcResponse {
 	r.mu.RLock()
-	h, ok := r.handlers[req.Method]
+	h, ok := r.handlers[strings.ToLower(req.Method)]
 	r.mu.RUnlock()
 	if !ok {
-		return &RpcResponse{
-			Jsonrpc: version,
-			Error:   ErrorFromCode(ErrCodeMethodNotFound),
-			Id:      req.Id,
-		}
+		return ErrorResponse(req.Id, ErrorFromCode(ErrCodeMethodNotFound))
 	}
 	resp, err := h(ctx, req.Params)
 	if err != nil {
 		r.logger.Logf("User error %v", err)
-		return &RpcResponse{
-			Jsonrpc: version,
-			Error:   err,
-			Id:      req.Id,
-		}
+		return ErrorResponse(req.Id, err)
 	}
+
+	return ResultResponse(req.Id, resp)
+}
+
+func ResultResponse(id any, resp json.RawMessage) *RpcResponse {
 	return &RpcResponse{
 		Jsonrpc: version,
 		Result:  resp,
-		Id:      req.Id,
+		Id:      id,
 	}
 }
 
-func WriteError(code int, enc *json.Encoder) {
-	enc.Encode(RpcResponse{
+func ErrorResponse(id any, err error) *RpcResponse {
+	return &RpcResponse{
 		Jsonrpc: version,
-		Error:   ErrorFromCode(code),
-	})
-}
-
-type RpcRequest struct {
-	Jsonrpc string          `json:"jsonrpc"`
-	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params"`
-	Id      any             `json:"id"`
-}
-
-type RpcResponse struct {
-	Jsonrpc string          `json:"jsonrpc"`
-	Result  json.RawMessage `json:"result,omitempty"`
-	Error   error           `json:"error,omitempty"`
-	Id      any             `json:"id,omitempty"`
-}
-
-type Flusher interface {
-	// Flush sends any buffered data to the client.
-	Flush()
+		Error:   err,
+		Id:      id,
+	}
 }
