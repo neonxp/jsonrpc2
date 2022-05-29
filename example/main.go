@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/qri-io/jsonschema"
 	"go.neonxp.dev/jsonrpc2/rpc"
 	"go.neonxp.dev/jsonrpc2/rpc/middleware"
 	"go.neonxp.dev/jsonrpc2/transport"
@@ -18,10 +17,12 @@ func main() {
 		rpc.WithLogger(rpc.StdLogger),
 		rpc.WithTransport(&transport.HTTP{Bind: ":8000", CORSOrigin: "*"}),
 	)
+
 	// Set options after constructor
-	validation, err := middleware.Validation(map[string]middleware.MethodSchema{
+	serviceSchema := `
+	{
 		"divide": {
-			Request: *jsonschema.Must(`{
+			"request": {
 				"type": "object",
 				"properties": {
 					"a": {
@@ -33,8 +34,8 @@ func main() {
 					}
 				},
 				"required": ["a", "b"]
-			}`),
-			Response: *jsonschema.Must(`{
+			},
+			"response": {
 				"type": "object",
 				"properties": {
 					"quo": {
@@ -45,9 +46,28 @@ func main() {
 					}
 				},
 				"required": ["quo", "rem"]
-			}`),
+			}
 		},
-	})
+		"multiply": {
+			"request": {
+				"type": "object",
+				"properties": {
+					"a": {
+						"type": "integer"
+					},
+					"b": {
+						"type": "integer"
+					}
+				},
+				"required": ["a", "b"]
+			},
+			"response": {
+				"type": "integer"
+			}
+		}
+	}`
+
+	validation, err := middleware.Validation(middleware.MustSchema(serviceSchema))
 	if err != nil {
 		log.Fatal(err)
 	}
