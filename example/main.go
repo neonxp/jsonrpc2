@@ -79,6 +79,7 @@ func main() {
 
 	s.Register("multiply", rpc.H(Multiply))
 	s.Register("divide", rpc.H(Divide))
+	s.Register("hello", rpc.HS(Hello))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
@@ -100,6 +101,10 @@ func Divide(ctx context.Context, args *Args) (*Quotient, error) {
 	quo.Quo = args.A / args.B
 	quo.Rem = args.A % args.B
 	return quo, nil
+}
+
+func Hello(ctx context.Context) (string, error) {
+	return "world", nil
 }
 
 type Args struct {

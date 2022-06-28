@@ -41,4 +41,18 @@ func H[RQ any, RS any](handler func(context.Context, *RQ) (RS, error)) HandlerFu
 	}
 }
 
+// HS is a simple generic wrapper for rpc handlers without any request params.
+func HS[RS any](handler func(context.Context) (RS, error)) HandlerFunc {
+	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
+		resp, err := handler(ctx)
+		if err != nil {
+			return nil, Error{
+				Code:    ErrUser,
+				Message: err.Error(),
+			}
+		}
+		return json.Marshal(resp)
+	}
+}
+
 type HandlerFunc func(context.Context, json.RawMessage) (json.RawMessage, error)
