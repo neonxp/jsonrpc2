@@ -38,18 +38,30 @@ Go 1.18+ required
     )
 ```
 
-3. Write handler:
+3. Write handlers:
 ```go
+
+    // This handler supports request parameters
     func Multiply(ctx context.Context, args *Args) (int, error) {
         return args.A * args.B, nil
     }
+
+    // This handler has no request parameters
+    func Hello(ctx context.Context) (string, error) {
+        return "World", nil
+    }
 ```
 
-   Handler must have exact two arguments (context and input of any json serializable type) and exact two return values (output of any json serializable type and error)
+   A handler must have a context as first parameter and may have a second parameter, representing request paramters (input of any json serializable type). A handler always returns exactly two values (output of any json serializable type and error).
 
-4. Wrap handler with `rpc.H` method and register it in server:
+4. Wrap the handler using one of the two functions `rpc.H` (supporting req params) or `rpc.HS` (no params) and register it with the server:
+
 ```go
+    // handler has params
     s.Register("multiply", rpc.H(Multiply))
+
+    // handler has no params
+    s.Register("hello", rpc.HS(Hello))
 ```
 
 5. Run RPC server:
@@ -96,6 +108,7 @@ func main() {
 
    s.Register("multiply", rpc.H(Multiply))
    s.Register("divide", rpc.H(Divide))
+   s.Register("hello", rpc.HS(Hello))
 
    s.Run(context.Background())
 }
@@ -106,6 +119,10 @@ func Multiply(ctx context.Context, args *Args) (int, error) {
 
 func Divide(ctx context.Context, args *Args) (*Quotient, error) {
     //...
+}
+
+func Hello(ctx context.Context) (string, error) {
+	// ...
 }
 
 type Args struct {
