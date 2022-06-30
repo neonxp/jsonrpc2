@@ -35,8 +35,11 @@ func Logger(logger rpc.Logger) rpc.Middleware {
 			resp := handler(ctx, req)
 			t2 := time.Now().UnixMicro()
 			var params any
-			if err := json.Unmarshal(req.Params, &params); err != nil {
+			if err := json.Unmarshal(req.Params, &params); req.Params != nil && err != nil {
 				params = fmt.Sprintf("<invalid body: %s>", err.Error())
+			}
+			if req.Params == nil {
+				params = "<empty body>"
 			}
 			logger.Logf("rpc call=%s, args=%+v, take=%dμs", req.Method, params, (t2 - t1))
 			return resp

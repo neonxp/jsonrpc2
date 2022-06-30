@@ -27,7 +27,7 @@ import (
 func H[RQ any, RS any](handler func(context.Context, *RQ) (RS, error)) HandlerFunc {
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		req := new(RQ)
-		if err := json.Unmarshal(in, req); err != nil {
+		if err := json.Unmarshal(in, req); in != nil && err != nil {
 			return nil, ErrorFromCode(ErrCodeParseError)
 		}
 		resp, err := handler(ctx, req)

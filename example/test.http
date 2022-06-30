@@ -59,3 +59,13 @@ Content-Type: application/json
     "params": {},
     "id": "divide"
   }
+
+### No params
+POST http://localhost:8000/
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "hello",
+  "id": 2
+}
