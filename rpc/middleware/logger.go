@@ -21,7 +21,8 @@ package middleware
 
 import (
 	"context"
-	"strings"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"go.neonxp.dev/jsonrpc2/rpc"
@@ -33,8 +34,11 @@ func Logger(logger rpc.Logger) rpc.Middleware {
 			t1 := time.Now().UnixMicro()
 			resp := handler(ctx, req)
 			t2 := time.Now().UnixMicro()
-			args := strings.ReplaceAll(string(req.Params), "\n", "")
-			logger.Logf("rpc call=%s, args=%s, take=%dμs", req.Method, args, (t2 - t1))
+			var params any
+			if err := json.Unmarshal(req.Params, &params); err != nil {
+				params = fmt.Sprintf("<invalid body: %s>", err.Error())
+			}
+			logger.Logf("rpc call=%s, args=%+v, take=%dμs", req.Method, params, (t2 - t1))
 			return resp
 		}
 	}
