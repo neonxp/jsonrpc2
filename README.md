@@ -1,6 +1,8 @@
 
 # JSON-RPC 2.0
 
+❗️ Main repo: [https://gitrepo.ru/neonxp/di](https://gitrepo.ru/neonxp/di). Github is only mirror.
+
 Golang implementation of JSON-RPC 2.0 server with generics.
 
 Go 1.18+ required
