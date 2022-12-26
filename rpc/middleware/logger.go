@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.neonxp.dev/jsonrpc2/rpc"
+	"github.com/salemzii/jsonrpc2/rpc"
 )
 
 func Logger(logger rpc.Logger) rpc.Middleware {
