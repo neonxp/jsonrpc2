@@ -1,4 +1,4 @@
-//Package rpc provides abstract rpc server
+//Package middleware provides middlewares for rpc server
 //
 //Copyright (C) 2022 Alexander Kiryukhin <i@neonxp.dev>
 //
@@ -17,34 +17,4 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package rpc
-
-import (
-	"go.neonxp.dev/jsonrpc2/transport"
-)
-
-type Option func(s *RpcServer)
-
-func WithTransport(transport transport.Transport) Option {
-	return func(s *RpcServer) {
-		s.transports = append(s.transports, transport)
-	}
-}
-
-func WithMiddleware(mw Middleware) Option {
-	return func(s *RpcServer) {
-		s.middlewares = append(s.middlewares, mw)
-	}
-}
-
-func WithLogger(l Logger) Option {
-	return func(s *RpcServer) {
-		s.logger = l
-	}
-}
-
-func WithMiddlewares(mws ...Middleware) Option {
-	return func(s *RpcServer) {
-		s.middlewares = append(s.middlewares, mws...)
-	}
-}
+package middleware
