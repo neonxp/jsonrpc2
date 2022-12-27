@@ -20,7 +20,7 @@
 package rpc
 
 import (
-	"github.com/salemzii/jsonrpc2/transport"
+	"go.neonxp.dev/jsonrpc2/transport"
 )
 
 type Option func(s *RpcServer)

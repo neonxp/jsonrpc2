@@ -28,7 +28,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/salemzii/jsonrpc2/transport"
+	"go.neonxp.dev/jsonrpc2/transport"
 )
 
 const version = "2.0"

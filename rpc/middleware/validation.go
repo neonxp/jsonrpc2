@@ -27,7 +27,7 @@ import (
 
 	"github.com/qri-io/jsonschema"
 
-	"github.com/salemzii/jsonrpc2/rpc"
+	"go.neonxp.dev/jsonrpc2/rpc"
 )
 
 type ServiceSchema map[string]MethodSchema
