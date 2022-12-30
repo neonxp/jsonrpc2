@@ -20,98 +20,67 @@
 package transport
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
-	"errors"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
+	websocket "github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
 )
-
-const (
-	// Time allowed to write a message to the peer.
-	writeWait = 10 * time.Second
-	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
-
-	// Send pings to peer with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
-
-	// Maximum message size allowed from peer.
-	maxMessageSize = 512
-)
-
-var (
-	newline           = []byte{'\n'}
-	space             = []byte{' '}
-	errUpgradingConn  = errors.New("encountered error upgrading connection to websocket protocol")
-	errStartingServer = errors.New("encountered error starting http server")
-)
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
 
 type WebSocket struct {
-	Bind       string
-	TLS        *tls.Config
-	CORSOrigin string
-	Parallel   bool
+	Bind                        string
+	TLS                         *tls.Config
+	CORSOrigin                  string
+	Parallel                    bool
+	ReadDeadline, WriteDeadline time.Duration //Set custom timeout for future read and write calls
 }
+
+func (ws *WebSocket) WithReadDealine() bool  { return ws.ReadDeadline != 0 }
+func (ws *WebSocket) WithWriteDealine() bool { return ws.WriteDeadline != 0 }
 
 func (ws *WebSocket) Run(ctx context.Context, resolver Resolver) error {
 	srv := http.Server{
 		Addr: ws.Bind,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-			wsconn, err := upgrader.Upgrade(w, r, nil)
+			wsconn, _, _, err := websocket.UpgradeHTTP(r, w)
 			if err != nil {
-				log.Println(err)
 				return
 			}
-
-			log.Println("successfully upgraded connection")
 
 			defer func() {
 				wsconn.Close()
 			}()
 
-			wsconn.SetReadLimit(maxMessageSize)
-			wsconn.SetReadDeadline(time.Now().Add(pongWait))
-			wsconn.SetPongHandler(func(string) error {
-				wsconn.SetReadDeadline(time.Now().Add(pongWait))
-				return nil
-			})
+			if ws.WithReadDealine() {
+				wsconn.SetReadDeadline(time.Now().Add(ws.ReadDeadline * time.Second))
+			}
+
+			if ws.WithWriteDealine() {
+				wsconn.SetWriteDeadline(time.Now().Add(ws.WriteDeadline * time.Second))
+			}
 
 			for {
+
 				// read message from connection
-				messageType, message, err := wsconn.ReadMessage()
-				if err != nil {
-					if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-						log.Printf("error: %v", err)
-					}
-					break
-				}
-
-				message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-
-				wsconn.SetWriteDeadline(time.Now().Add(writeWait))
-
-				// create writer object that implements io.WriterCloser interface
-				// messageType is same as the messageType recieved from the connection
-				w, err := wsconn.NextWriter(messageType)
+				_, reader, err := wsutil.NextReader(wsconn, websocket.StateServerSide)
 				if err != nil {
 					return
 				}
 
-				resolver.Resolve(ctx, bytes.NewBuffer(message), w, ws.Parallel)
+				// create writer object that implements io.WriterCloser interface
+				writer := wsutil.NewWriter(wsconn, websocket.StateServerSide, websocket.OpText)
+
+				resolver.Resolve(ctx, reader, writer, ws.Parallel)
+
+				if err := writer.Flush(); err != nil {
+					return
+				}
+
 			}
+
 		}),
 
 		BaseContext: func(l net.Listener) context.Context {
@@ -125,7 +94,6 @@ func (ws *WebSocket) Run(ctx context.Context, resolver Resolver) error {
 	}()
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Println(err)
 		return err
 	}
 	return nil
